@@ -4,46 +4,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.tailwindcss.com"></script>
   <title>OpenAI Usage Report</title>
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 </head>
 
 <body>
 
-  <div id="app">
-    <p v-if="usageData.length">Total Cost: {{ totalCostSum }}</p>
-    <p v-if="usageData.length">Total Requests: {{ totalRequests }}</p>
-    <p v-if="usageData.length">Requests per Model:</p>
-    <ul v-if="usageData.length">
-      <li v-for="(count, model) in requestsPerModel">{{ model }}: {{ count }}</li>
-    </ul>
-    <table border="1" v-if="usageData.length">
-      <thead>
+  <div id="app" class="container mx-auto px-8">
+    <h1 class="text-2xl">OpenAI Api Usage</h1>
+    <div v-if="usageData.length" class="my-4">
+      <h2 class="text-xl font-semibold my-2">Summary</h2>
+      <div class="flex w-full flex-col md:flex-row pb-4">
+        <div class="flex-1">
+          <p class="text-md font-semibold">Total Cost: <span class="bg-yellow-200">${{ totalCostSum }}</span></p>
+          <p class="text-md font-semibold">Total Requests: <span class="bg-yellow-200">{{ totalRequests }} req</span>
+          </p>
+        </div>
+        <div class="flex-1">
+          <p class="text-md font-semibold">Average Request Cost: <span class="bg-yellow-200">${{ averageRequestCost
+              }}</span></p>
+          <p class="text-md font-semibold">Average Cost Per Day: <span class="bg-yellow-200">${{ averageCostPerDay
+              }}</span>
+          </p>
+        </div>
+
+        <div class="flex-1">
+          <p class="text-md font-semibold">Requests per Model:</p>
+          <ul class="list-disc pl-5">
+            <li v-for="(count, model) in requestsPerModel" class="text-base">{{ model }}: <span class="bg-yellow-200">{{
+                count }} req</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <p class="text-xl font-semibold my-2">Costs and Requests Per Day</p>
+    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
         <tr>
-          <th>Created</th>
-          <th>Model</th>
-          <th>Prompt Tokens</th>
-          <th>Completion Tokens</th>
-          <th>Total Tokens</th>
-          <th>Prompt Cost</th>
-          <th>Output Cost</th>
-          <th>Total Cost</th>
-          <th>Price Per 1000 Tokens Input</th>
-          <th>Price Per 1000 Tokens Output</th>
+          <th class="border px-4 py-2">Date</th>
+          <th class="border px-4 py-2">Requests</th>
+          <th class="border px-4 py-2">Cost</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in usageData" :key="item.id">
-          <td>{{ item.createdAt }}</td>
-          <td>{{ item.model }}</td>
-          <td>{{ item.promptTokens }}</td>
-          <td>{{ item.completionTokens }}</td>
-          <td>{{ item.totalTokens }}</td>
-          <td>{{ item.promptCost.toFixed(4) }}</td>
-          <td>{{ item.outputCost.toFixed(4) }}</td>
-          <td>{{ item.totalCost.toFixed(3) }}</td>
-          <td>{{ item.pricePer1000TokensInput }}</td>
-          <td>{{ item.pricePer1000TokensOutput }}</td>
+        <tr v-for="(count, date) in requestsPerDay" :key="'req-'+date" class="text-base">
+          <td class="border px-4 py-2">{{ date }}</td>
+          <td class="border px-4 py-2">{{ count }}</td>
+          <td class="border px-4 py-2">{{ costPerDay[date]?.toFixed(3) || 0 }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+
+    <h2 class="text-xl font-semibold my-2">Requests</h2>
+    <table v-if="usageData.length" class="border w-full text-sm text-left text-gray-500 dark:text-gray-400">
+
+      <thead class="border text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <tr class="">
+          <th class="border px-6 py-3">Created</th>
+          <th class="border px-6 py-3">Model</th>
+          <th class="border px-6 py-3">Prompt Tokens</th>
+          <th class="border px-6 py-3">Completion Tokens</th>
+          <th class="border px-6 py-3">Total Tokens</th>
+          <th class="border px-6 py-3">Prompt Cost</th>
+          <th class="border px-6 py-3">Output Cost</th>
+          <th class="border px-6 py-3">Total Cost</th>
+          <th class="border px-6 py-3">Price Per 1000 Tokens Input</th>
+          <th class="border px-6 py-3">Price Per 1000 Tokens Output</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in usageData" :key="item.id" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+          <td class="border px-6 py-4">{{ item.createdAt }}</td>
+          <td class="border px-6 py-4">{{ item.model }}</td>
+          <td class="border px-6 py-4">{{ item.promptTokens }}</td>
+          <td class="border px-6 py-4">{{ item.completionTokens }}</td>
+          <td class="border px-6 py-4">{{ item.totalTokens }}</td>
+          <td class="border px-6 py-4">${{ item.promptCost.toFixed(4) }}</td>
+          <td class="border px-6 py-4">${{ item.outputCost.toFixed(4) }}</td>
+          <td class="border px-6 py-4">${{ item.totalCost.toFixed(3) }}</td>
+          <td class="border px-6 py-4">${{ item.pricePer1000TokensInput }}</td>
+          <td class="border px-6 py-4">${{ item.pricePer1000TokensOutput }}</td>
         </tr>
       </tbody>
     </table>
@@ -75,6 +118,38 @@
         },
         totalRequests: function () {
           return this.usageData.length;
+        },
+        costPerDay: function () {
+          const dateCosts = {};
+          this.usageData.forEach(item => {
+            const date = new Date(item.createdAt).toISOString().split("T")[0];
+            dateCosts[date] = (dateCosts[date] || 0) + parseFloat(item.totalCost);
+          });
+          return dateCosts;
+        },
+        averageCostPerDay: function () {
+          const dateCounts = {}, dateCosts = {};
+          this.usageData.forEach(item => {
+            const date = new Date(item.createdAt).toISOString().split("T")[0];
+            dateCounts[date] = (dateCounts[date] || 0) + 1;
+            dateCosts[date] = (dateCosts[date] || 0) + parseFloat(item.totalCost);
+          });
+          const totalDays = Object.keys(dateCounts).length;
+          const totalCost = Object.values(dateCosts).reduce((a, b) => a + b, 0);
+          return totalDays ? (totalCost / totalDays).toFixed(3) : 0;
+        },
+        requestsPerDay: function () {
+          const dateCounts = {};
+          this.usageData.forEach(item => {
+            const date = new Date(item.createdAt).toISOString().split("T")[0];
+            dateCounts[date] = (dateCounts[date] || 0) + 1;
+          });
+          return dateCounts;
+        },
+        averageRequestCost: function () {
+          if (this.usageData.length === 0) return 0;
+          const totalCost = this.usageData.reduce((acc, item) => acc + parseFloat(item.totalCost), 0);
+          return (totalCost / this.usageData.length).toFixed(3);
         },
         requestsPerModel: function () {
           const modelCount = {};
