@@ -77,17 +77,17 @@ async function trackCosts(response, model, cacheDoc) {
   usage["total_cost"] = totalCost;
 
   const usageObject = {
-    created_at: Timestamp.now(),
+    createdAt: Timestamp.now(),
     model, 
-    prompt_tokens: usage.prompt_tokens,
-    completion_tokens: usage.completion_tokens,
-    total_tokens: usage.total_tokens,
-    price_per_1k_tokens_input: pricePer1000TokensInput,
-    price_per_1k_tokens_output: pricePer1000TokensOutput,
-    prompt_cost: promptCost,
-    output_cost: outputCost,
-    total_cost: usage.total_cost,
-    cache_doc_id: cacheDoc
+    promptTokens: usage.prompt_tokens,
+    completionTokens: usage.completion_tokens,
+    totalTokens: usage.total_tokens,
+    pricePer1000TokensInput,
+    pricePer1000TokensOutput,
+    promptCost,
+    outputCost,
+    totalCost: usage.total_cost,
+    cacheDoc: cacheDoc
   };
 
   await db.collection("openaiUsage").add(usageObject);
