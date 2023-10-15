@@ -16,7 +16,7 @@ const db = admin.firestore();
  * @param {number} rate - The rate per 1000 tokens.
  * @return {string} The calculated cost, rounded to four decimal places.
  */
-const calculateCost = (tokens, rate) => parseFloat(tokens / 1000 * rate).toFixed(4);
+const calculateCost = (tokens, rate) => parseFloat(tokens  * rate / 1000);
 
 /**
  * Replaces the middle half of a string with periods.
@@ -82,8 +82,10 @@ async function trackCosts(response, model, cacheDoc) {
     prompt_tokens: usage.prompt_tokens,
     completion_tokens: usage.completion_tokens,
     total_tokens: usage.total_tokens,
-    promptCost: promptCost,
-    outputCost: outputCost,
+    pricePer1000TokensInput,
+    pricePer1000TokensOutput,
+    promptCost,
+    outputCost,
     total_cost: usage.total_cost,
     cacheDoc: cacheDoc
   };
@@ -203,18 +205,15 @@ exports.getOpenAIUsage = onRequest(async (req, res) => {
     const snapshot = await db.collection('openaiUsage').get();
     const data = snapshot.docs.map(doc => {
       const docData = doc.data();
-      const { createdAt, rawResponse, usage } = docData;
-      const { created, usage: rawUsage, model, id } = rawResponse || {};
-      const createdDate = new Date(created * 1000).toLocaleString();
+      const createdDate = docData.createdAt.toDate().toISOString();
+      const cacheId = docData.cacheDoc.id;
+      // delete cacheDoc from docData
+      delete docData.cacheDoc;
 
       return {
-        docId: doc.id,
-        id,
-        created, 
-        createdDate, 
-        usage: 
-        rawUsage, 
-        model,
+        ...docData,
+        createdAt: createdDate,
+        cacheId, 
         
       };
     });
