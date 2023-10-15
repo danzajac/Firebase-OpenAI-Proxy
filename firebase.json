@@ -1,0 +1,42 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "openAIProxy",
+          "region": "us-central1"  // optional (see note below)
+        }
+      },
+      {
+        "source": "/getOpenAIUsage",
+        "function": {
+          "functionId": "getOpenAIUsage",
+          "region": "us-central1"  // optional (see note below)
+        }
+      }
+    ]
+  }
+}
