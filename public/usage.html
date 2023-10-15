@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenAI Usage Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+</head>
+
+<body>
+
+  <div id="app">
+    <p v-if="usageData.length">Total Cost: {{ totalCostSum }}</p>
+    <p v-if="usageData.length">Total Requests: {{ totalRequests }}</p>
+    <p v-if="usageData.length">Requests per Model:</p>
+    <ul v-if="usageData.length">
+      <li v-for="(count, model) in requestsPerModel">{{ model }}: {{ count }}</li>
+    </ul>
+    <table border="1" v-if="usageData.length">
+      <thead>
+        <tr>
+          <th>Created</th>
+          <th>Model</th>
+          <th>Prompt Tokens</th>
+          <th>Completion Tokens</th>
+          <th>Total Tokens</th>
+          <th>Prompt Cost</th>
+          <th>Output Cost</th>
+          <th>Total Cost</th>
+          <th>Price Per 1000 Tokens Input</th>
+          <th>Price Per 1000 Tokens Output</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in usageData" :key="item.id">
+          <td>{{ item.createdAt }}</td>
+          <td>{{ item.model }}</td>
+          <td>{{ item.promptTokens }}</td>
+          <td>{{ item.completionTokens }}</td>
+          <td>{{ item.totalTokens }}</td>
+          <td>{{ item.promptCost.toFixed(4) }}</td>
+          <td>{{ item.outputCost.toFixed(4) }}</td>
+          <td>{{ item.totalCost.toFixed(3) }}</td>
+          <td>{{ item.pricePer1000TokensInput }}</td>
+          <td>{{ item.pricePer1000TokensOutput }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p v-else>Loading data...</p>
+  </div>
+
+
+
+  <script type="text/javascript">
+    new Vue({
+      el: '#app',
+      data: {
+        usageData: []
+      },
+      methods: {
+        fetchData: async function () {
+          try {
+            const response = await fetch('/getOpenAIUsage');
+            const data = await response.json();
+            this.usageData = data;
+          } catch (error) {
+            console.error('Error fetching data:', error);
+          }
+        }
+      },
+      computed: {
+        totalCostSum: function () {
+          return this.usageData.reduce((acc, item) => acc + parseFloat(item.totalCost), 0).toFixed(3);
+        },
+        totalRequests: function () {
+          return this.usageData.length;
+        },
+        requestsPerModel: function () {
+          const modelCount = {};
+          this.usageData.forEach(item => {
+            modelCount[item.model] = (modelCount[item.model] || 0) + 1;
+          });
+          return modelCount;
+        }
+      },
+
+      mounted: function () {
+        this.fetchData();
+      }
+    });
+  </script>
+</body>
+
+</html>
