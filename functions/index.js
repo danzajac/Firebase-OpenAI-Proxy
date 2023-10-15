@@ -202,7 +202,8 @@ exports.openAIProxy = onRequest(async (req, res) => {
 
 exports.getOpenAIUsage = onRequest(async (req, res) => {
   try {
-    const snapshot = await db.collection('openaiUsage').get();
+    const snapshot = await db.collection('openaiUsage').orderBy('createdAt', 'desc').get();
+    
     const data = snapshot.docs.map(doc =>{
       const docData = doc.data();
       const createdDate = docData.createdAt.toDate().toISOString();
