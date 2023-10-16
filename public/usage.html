@@ -20,6 +20,17 @@
         <div class="flex-1">
           <p class="text-md font-semibold">Total Cost: <span class="bg-yellow-200">${{ totalCostSum }}</span></p>
           <p class="text-md font-semibold">Total Requests: <span class="bg-yellow-200">{{ totalRequests }} req</span>
+          <p class="text-md font-semibold">
+            Average Total Tokens: <span class="bg-yellow-200">{{ averageTotalTokens }}</span>
+          </p>
+          </p>
+        </div>
+        <div class="flex-1">
+          <p class="text-md font-semibold">
+            Average Prompt Tokens: <span class="bg-yellow-200">{{ averagePromptTokens }}</span>
+          </p>
+          <p class="text-md font-semibold">
+            Average Output Tokens: <span class="bg-yellow-200">{{ averageOutputTokens }}</span>
           </p>
         </div>
         <div class="flex-1">
@@ -40,29 +51,36 @@
       </div>
     </div>
     <p class="text-xl font-semibold my-2">Costs and Requests Per Day</p>
-    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+
+    <table border="1" v-if="dailyMetrics" class="min-w-full w-full text-sm text-left text-gray-500 dark:text-gray-400">
       <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
         <tr>
           <th class="border px-4 py-2">Date</th>
-          <th class="border px-4 py-2">Requests</th>
-          <th class="border px-4 py-2">Cost</th>
+          <th class="border px-4 py-2">Total Input Tokens</th>
+          <th class="border px-4 py-2">Total Output Tokens</th>
+          <th class="border px-4 py-2">Total Tokens</th>
+          <th class="border px-4 py-2">Total Requests</th>
+          <th class="border px-4 py-2">Total Cost</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(count, date) in requestsPerDay" :key="'req-'+date" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
-          <td class="border px-4 py-2">{{ date }}</td>
-          <td class="border px-4 py-2">{{ count }}</td>
-          <td class="border px-4 py-2">{{ costPerDay[date]?.toFixed(3) || 0 }}</td>
+        <tr v-for="(metric, day) in dailyMetrics" :key="day"
+          class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
+          <td class="border px-4 py-2">{{ day }}</td>
+          <td class="border px-4 py-2">{{ metric.totalInputTokens }}</td>
+          <td class="border px-4 py-2">{{ metric.totalOutputTokens }}</td>
+          <td class="border px-4 py-2">{{ metric.totalTokens }}</td>
+          <td class="border px-4 py-2">{{ metric.totalRequests }} req</td>
+          <td class="border px-4 py-2">${{ metric.totalCost.toFixed(3) }}</td>
         </tr>
       </tbody>
     </table>
-
 
     <h2 class="text-xl font-semibold my-2">Requests</h2>
     <table v-if="usageData.length" class="border w-full text-sm text-left text-gray-500 dark:text-gray-400">
 
       <thead class="border text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-        <tr >
+        <tr>
           <th class="border px-6 py-3">Created</th>
           <th class="border px-6 py-3">Model</th>
           <th class="border px-6 py-3">Prompt Tokens</th>
@@ -71,12 +89,13 @@
           <th class="border px-6 py-3">Prompt Cost</th>
           <th class="border px-6 py-3">Output Cost</th>
           <th class="border px-6 py-3">Total Cost</th>
-          <th class="border px-6 py-3">Price Per 1000 Tokens Input</th>
-          <th class="border px-6 py-3">Price Per 1000 Tokens Output</th>
+          <!-- <th class="border px-6 py-3">Price Per 1000 Tokens Input</th> -->
+          <!-- <th class="border px-6 py-3">Price Per 1000 Tokens Output</th> -->
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in usageData" :key="item.id" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
+        <tr v-for="item in usageData" :key="item.id"
+          class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
           <td class="border px-6 py-4">{{ item.createdAt }}</td>
           <td class="border px-6 py-4">{{ item.model }}</td>
           <td class="border px-6 py-4">{{ item.promptTokens }}</td>
@@ -85,8 +104,8 @@
           <td class="border px-6 py-4">${{ item.promptCost.toFixed(4) }}</td>
           <td class="border px-6 py-4">${{ item.outputCost.toFixed(4) }}</td>
           <td class="border px-6 py-4">${{ item.totalCost.toFixed(3) }}</td>
-          <td class="border px-6 py-4">${{ item.pricePer1000TokensInput }}</td>
-          <td class="border px-6 py-4">${{ item.pricePer1000TokensOutput }}</td>
+          <!-- <td class="border px-6 py-4">${{ item.pricePer1000TokensInput }}</td> -->
+          <!-- <td class="border px-6 py-4">${{ item.pricePer1000TokensOutput }}</td> -->
         </tr>
       </tbody>
     </table>
@@ -138,6 +157,22 @@
           const totalCost = Object.values(dateCosts).reduce((a, b) => a + b, 0);
           return totalDays ? (totalCost / totalDays).toFixed(3) : 0;
         },
+        averageTotalTokens() {
+          if (!this.usageData.length) return 0;
+          const totalTokens = this.usageData.reduce((acc, item) => acc + item.totalTokens, 0);
+          return (totalTokens / this.usageData.length).toFixed(2);
+        },
+        averagePromptTokens() {
+          if (!this.usageData.length) return 0;
+          const totalPromptTokens = this.usageData.reduce((acc, item) => acc + item.promptTokens, 0);
+          return (totalPromptTokens / this.usageData.length).toFixed(2);
+        },
+
+        averageOutputTokens() {
+          if (!this.usageData.length) return 0;
+          const totalOutputTokens = this.usageData.reduce((acc, item) => acc + item.completionTokens, 0);
+          return (totalOutputTokens / this.usageData.length).toFixed(2);
+        },
         requestsPerDay: function () {
           const dateCounts = {};
           this.usageData.forEach(item => {
@@ -157,6 +192,30 @@
             modelCount[item.model] = (modelCount[item.model] || 0) + 1;
           });
           return modelCount;
+        },
+        dailyMetrics() {
+          const metrics = {};
+
+          this.usageData.forEach(item => {
+            const day = item.createdAt.split('T')[0];  // Assuming 'createdAt' is in ISO format
+            if (!metrics[day]) {
+              metrics[day] = {
+                totalInputTokens: 0,
+                totalOutputTokens: 0,
+                totalTokens: 0,
+                totalRequests: 0,
+                totalCost: 0
+              };
+            }
+
+            metrics[day].totalInputTokens += item.promptTokens;
+            metrics[day].totalOutputTokens += item.completionTokens;
+            metrics[day].totalTokens += item.totalTokens;
+            metrics[day].totalRequests += 1;
+            metrics[day].totalCost += parseFloat(item.totalCost);
+          });
+
+          return metrics;
         }
       },
 
