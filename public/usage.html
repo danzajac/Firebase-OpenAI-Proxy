@@ -76,26 +76,34 @@
       </tbody>
     </table>
 
-    <h2 class="text-xl font-semibold my-2">Usage by API Key</h2>
-<table v-if="Object.keys(usageByApiKey).length" class="border w-full text-sm text-left text-gray-500 dark:text-gray-400">
-  <thead class="border text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-    <tr>
-      <th class="border px-6 py-3">API Key</th>
-      <th class="border px-6 py-3">Total Requests</th>
-      <th class="border px-6 py-3">Total Tokens</th>
-      <th class="border px-6 py-3">Total Cost</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr v-for="(data, apiKey) in usageByApiKey" :key="apiKey"
-      class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
-      <td class="border px-6 py-4">{{ apiKey }}</td>
-      <td class="border px-6 py-4">{{ data.totalRequests }}</td>
-      <td class="border px-6 py-4">{{ data.totalTokens }}</td>
-      <td class="border px-6 py-4">${{ data.totalCost.toFixed(3) }}</td>
-    </tr>
-  </tbody>
-</table>
+    <h2 class="text-xl font-semibold my-2">Usage By API Key</h2>
+    <table v-if="Object.keys(usageByApiKey).length"
+      class="border w-full text-sm text-left text-gray-500 dark:text-gray-400">
+      <thead class="border text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <tr>
+          <th class="border px-6 py-3">API Key</th>
+          <th class="border px-6 py-3">Avg Prompt Tokens</th>
+          <th class="border px-6 py-3">Avg Output Tokens</th>
+          <th class="border px-6 py-3">Average Cost</th>
+          <th class="border px-6 py-3">Total Requests</th>
+          <th class="border px-6 py-3">Total Tokens</th>
+          <th class="border px-6 py-3">Total Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item, apikey) in usageByApiKey" :key="apikey"
+          class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
+          <td class="border px-6 py-4">{{ apikey }}</td>
+          <td class="border px-6 py-4">{{ item.averagePromptTokens }}</td>
+          <td class="border px-6 py-4">{{ item.averageOutputTokens }}</td>
+          <td class="border px-6 py-4">${{ item.averageCost }}</td>
+          <td class="border px-6 py-4">{{ item.totalRequests }}</td>
+          <td class="border px-6 py-4">{{ item.totalTokens }}</td>
+          <td class="border px-6 py-4">${{ item.totalCost.toFixed(3) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
 
 
     <h2 class="text-xl font-semibold my-2">Requests</h2>
@@ -218,20 +226,35 @@
           return modelCount;
         },
         usageByApiKey: function () {
-          const apiKeyUsage = {};
+          const usageMap = {};
+
           this.usageData.forEach(item => {
-            if (!apiKeyUsage[item.apikey]) {
-              apiKeyUsage[item.apikey] = {
-                totalRequests: 0,
+            if (!usageMap[item.apikey]) {
+              usageMap[item.apikey] = {
                 totalCost: 0,
-                totalTokens: 0
+                totalRequests: 0,
+                totalTokens: 0,
+                totalPromptTokens: 0,
+                totalOutputTokens: 0
               };
             }
-            apiKeyUsage[item.apikey].totalRequests += 1;
-            apiKeyUsage[item.apikey].totalCost += parseFloat(item.totalCost);
-            apiKeyUsage[item.apikey].totalTokens += item.totalTokens;
+
+            const apiStat = usageMap[item.apikey];
+            apiStat.totalCost += parseFloat(item.totalCost);
+            apiStat.totalRequests += 1;
+            apiStat.totalTokens += item.totalTokens;
+            apiStat.totalPromptTokens += item.promptTokens;
+            apiStat.totalOutputTokens += item.completionTokens;
           });
-          return apiKeyUsage;
+
+          Object.keys(usageMap).forEach(apikey => {
+            const stat = usageMap[apikey];
+            stat.averageCost = (stat.totalCost / stat.totalRequests).toFixed(3);
+            stat.averagePromptTokens = (stat.totalPromptTokens / stat.totalRequests).toFixed(2);
+            stat.averageOutputTokens = (stat.totalOutputTokens / stat.totalRequests).toFixed(2);
+          });
+
+          return usageMap;
         },
 
         dailyMetrics() {
