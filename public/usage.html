@@ -76,6 +76,28 @@
       </tbody>
     </table>
 
+    <h2 class="text-xl font-semibold my-2">Usage by API Key</h2>
+<table v-if="Object.keys(usageByApiKey).length" class="border w-full text-sm text-left text-gray-500 dark:text-gray-400">
+  <thead class="border text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+    <tr>
+      <th class="border px-6 py-3">API Key</th>
+      <th class="border px-6 py-3">Total Requests</th>
+      <th class="border px-6 py-3">Total Tokens</th>
+      <th class="border px-6 py-3">Total Cost</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="(data, apiKey) in usageByApiKey" :key="apiKey"
+      class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
+      <td class="border px-6 py-4">{{ apiKey }}</td>
+      <td class="border px-6 py-4">{{ data.totalRequests }}</td>
+      <td class="border px-6 py-4">{{ data.totalTokens }}</td>
+      <td class="border px-6 py-4">${{ data.totalCost.toFixed(3) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+
     <h2 class="text-xl font-semibold my-2">Requests</h2>
     <table v-if="usageData.length" class="border w-full text-sm text-left text-gray-500 dark:text-gray-400">
 
@@ -195,6 +217,23 @@
           });
           return modelCount;
         },
+        usageByApiKey: function () {
+          const apiKeyUsage = {};
+          this.usageData.forEach(item => {
+            if (!apiKeyUsage[item.apikey]) {
+              apiKeyUsage[item.apikey] = {
+                totalRequests: 0,
+                totalCost: 0,
+                totalTokens: 0
+              };
+            }
+            apiKeyUsage[item.apikey].totalRequests += 1;
+            apiKeyUsage[item.apikey].totalCost += parseFloat(item.totalCost);
+            apiKeyUsage[item.apikey].totalTokens += item.totalTokens;
+          });
+          return apiKeyUsage;
+        },
+
         dailyMetrics() {
           const metrics = {};
 
