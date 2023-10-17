@@ -83,6 +83,7 @@
         <tr>
           <th class="border px-6 py-3">Created</th>
           <th class="border px-6 py-3">Model</th>
+          <th class="border px-6 py-3">OpenAI API Key</th>
           <th class="border px-6 py-3">Prompt Tokens</th>
           <th class="border px-6 py-3">Completion Tokens</th>
           <th class="border px-6 py-3">Total Tokens</th>
@@ -98,6 +99,7 @@
           class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-yellow-200">
           <td class="border px-6 py-4">{{ item.createdAt }}</td>
           <td class="border px-6 py-4">{{ item.model }}</td>
+          <td class="border px-6 py-4">{{ item.apikey }}</td>
           <td class="border px-6 py-4">{{ item.promptTokens }}</td>
           <td class="border px-6 py-4">{{ item.completionTokens }}</td>
           <td class="border px-6 py-4">{{ item.totalTokens }}</td>

@@ -76,6 +76,10 @@ async function trackCosts(response, model, cacheDoc) {
 
   usage["total_cost"] = totalCost;
 
+  // Read apikey from cacheDoc
+  const docData = await cacheDoc.get();
+  const apikey = docData.exists ? docData.data().apikey : null;
+
   const usageObject = {
     createdAt: Timestamp.now(),
     model, 
@@ -87,7 +91,8 @@ async function trackCosts(response, model, cacheDoc) {
     promptCost,
     outputCost,
     totalCost: usage.total_cost,
-    cacheDoc: cacheDoc
+    cacheDoc: cacheDoc,
+    apikey  // Add apikey to usageObject
   };
 
   await db.collection("openaiUsage").add(usageObject);
@@ -171,6 +176,7 @@ exports.openAIProxy = onRequest(async (req, res) => {
       response: responseData,
       model: model,
       apikey: replaceMiddleWithPeriods(auth),
+      authHash,
       tokensUsed: tokensUsed,
       timestamp: currentTime, 
       lastModified: Timestamp.now(),
