@@ -33,9 +33,9 @@ onMounted(async () => {
 
       <main>
         <header>
-          <!-- <SecondaryNav />
+          <!-- <SecondaryNav /> -->
           <Heading />
-          <Stats /> -->
+          <Stats />
         </header>
         <ActvityList />
       </main>

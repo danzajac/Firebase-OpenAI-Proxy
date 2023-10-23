@@ -21,49 +21,49 @@
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-8 font-semibold sm:table-cell"
+            class="hidden px-6 py-3 font-semibold sm:table-cell"
           >
             Model
           </th>
           <th
             scope="col"
-            class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20"
+            class="hidden px-6 py-3 font-semibold sm:table-cell"
           >
             OpenAI Key
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
+            class="hidden px-6 py-3 font-semibold md:table-cell"
           >
             Prompt Tokens
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
+            class="hidden px-6 py-3 font-semibold md:table-cell"
           >
             Completion Tokens
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
+            class="hidden px-6 py-3 font-semibold md:table-cell"
           >
             Total Tokens
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
+            class="px-6 py-3 font-semibold md:table-cell"
           >
             Prompt Cost
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
+            class="hidden px-6 py-3 font-semibold md:table-cell"
           >
             Output Cost
           </th>
           <th
             scope="col"
-            class="hidden py-2 pl-0 pr-4 text-right font-semibold sm:table-cell sm:pr-6 lg:pr-8"
+            class="px-6 py-3 font-semibold md:table-cell"
           >
             Total Cost
           </th>
@@ -71,38 +71,50 @@
       </thead>
       <tbody class="divide-y divide-white/5">
         <tr v-for="item in usageData" :key="item.id">
-          <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
-            <div class="flex items-center gap-x-4">
-             
-              <div class="truncate text-sm font-medium leading-6 text-white">
-                {{ item.model }}
-              </div>
-            </div>
-          </td>
-          <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
-            <div class="flex gap-x-3">
-              <div class="font-mono text-sm leading-6 text-gray-400">
-                {{ item.model }}
-              </div>
-         
-            </div>
-          </td>
-          <td class="py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20">
-            <div class="flex items-center justify-end gap-x-2 sm:justify-start">
-              <time class="text-gray-400 sm:hidden" :datetime="item.dateTime">{{ item.model }}</time>
-            
-              <div class="hidden text-white sm:block">{{ item.model }}</div>
-            </div>
+          <td
+            class="px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            {{ formatDate(item.createdAt.toDate()) }}
           </td>
           <td
-            class="hidden py-4 pl-0 pr-8 text-sm leading-6 text-gray-400 md:table-cell lg:pr-20"
+            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
           >
-          {{ item.model }}
+            {{ item.model }}
           </td>
           <td
-            class="hidden py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:table-cell sm:pr-6 lg:pr-8"
+            class="hidden px-6 py-3 text-xs leading-6 text-gray-400 md:table-cell"
           >
-            <time :datetime="item.createdAt">{{ item.model }}</time>
+            {{ item.apikey }}
+          </td>
+          <td
+            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            {{ item.promptTokens }}
+          </td>
+          <td
+            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            {{ item.completionTokens }}
+          </td>
+          <td
+            class="px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            {{ item.totalTokens }}
+          </td>
+          <td
+            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            ${{ item.promptCost.toFixed(4) }}
+          </td>
+          <td
+            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            ${{ item.outputCost.toFixed(4) }}
+          </td>
+          <td
+            class="px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+          >
+            ${{ item.totalCost.toFixed(3) }}
           </td>
         </tr>
       </tbody>
@@ -114,8 +126,16 @@
 import { useStore } from "vuex";
 import { ref, computed, onMounted } from "vue";
 
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('en-US', { 
+    year: 'numeric', 
+    month: 'numeric', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+  }).format(date);
+};
 
 const store = useStore();
 const usageData = computed(() => store.state.usageData);
-
 </script>
