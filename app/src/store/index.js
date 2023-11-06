@@ -1,28 +1,64 @@
 import { createStore } from 'vuex';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { orderBy, query } from 'firebase/firestore';
-
+import { getFirestore, collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 const db = getFirestore();
 
 export default createStore({
   state: {
-    usageData: []
+    usageData: [],
+    loading: false,
+    error: null
   },
   mutations: {
     setUsageData(state, payload) {
       state.usageData = payload;
+    },
+    setLoading(state, payload) {
+      state.loading = payload;
+    },
+    setError(state, payload) {
+      state.error = payload;
     }
   },
   actions: {
-    async fetchUsageData({ commit }) {
-      const q = query(collection(db, "openaiUsage"), orderBy("createdAt", "desc")); // Replace "someField" with the field you want to sort by
-      const querySnapshot = await getDocs(q);
-      const allData = [];
-      querySnapshot.forEach((doc) => {
-        allData.push(doc.data());
-      });
-      commit('setUsageData', allData);
+    fetchUsageData({ commit }, timeRangeInHours) {
+      commit('setLoading', true);
+
+      let q;
+      if (typeof timeRangeInHours === 'number') {
+        const currentTime = Timestamp.now();
+        const startTime = Timestamp.fromMillis(currentTime.toMillis() - (timeRangeInHours * 3600 * 1000));
+        q = query(
+          collection(db, "openaiUsage"), 
+          where("createdAt", ">=", startTime),
+          orderBy("createdAt", "desc")
+        );
+      } else {
+        q = query(
+          collection(db, "openaiUsage"),
+          orderBy("createdAt", "desc")
+        );
+      }
+      
+      const unsubscribe = onSnapshot(q,
+        (querySnapshot) => {
+          const allData = [];
+          querySnapshot.forEach((doc) => {
+            allData.push(doc.data());
+          });
+          commit('setUsageData', allData);
+          if (this.state.loading === true) {
+            commit('setLoading', false);
+          }
+          
+        },
+        (error) => {
+          commit('setError', error.message);
+          commit('setLoading', false);
+        }
+      );
+
+      return unsubscribe;
     }
   }
 });

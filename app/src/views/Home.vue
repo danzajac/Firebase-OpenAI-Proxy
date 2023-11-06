@@ -17,7 +17,10 @@ const { user } = useAuth();
 
 
 const store = useStore();
-const usageData = computed(() => store.state.usageData);
+// const usageData = computed(() => store.state.usageData);
+const error = computed(() => store.state.error);
+const loading = computed(() => store.state.loading);
+
 
 onMounted(async () => {
   console.log("mounted");
@@ -33,11 +36,14 @@ onMounted(async () => {
 
       <main>
         <header>
-          <!-- <SecondaryNav /> -->
-          <Heading />
+          <SecondaryNav />
+          loading {{ loading }}
+          error {{ error }}
+          <!-- <Heading /> -->
           <Stats />
         </header>
-        <ActvityList />
+
+
       </main>
   </BaseLayout>
 </template>

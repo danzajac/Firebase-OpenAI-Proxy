@@ -1,8 +1,8 @@
 <template>
   <!-- Activity list -->
-  <div class="border-t border-white/10 pt-11">
+  <div class="border-t dark:border-white/10 border-gray-100 pt-11">
     <h2
-      class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8"
+      class="px-4 text-base font-semibold leading-7 dark:text-white sm:px-6 lg:px-8"
     >
       Latest activity
     </h2>
@@ -14,9 +14,9 @@
         <col class="lg:w-1/12" />
         <col class="lg:w-1/12" />
       </colgroup>
-      <thead class="border-b border-white/10 text-sm leading-6 text-white">
+      <thead class="border-b dark:border-white/10 border-gray-100 text-sm dark:text-white rounded">
         <tr>
-          <th scope="col" class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8">
+          <th scope="col" class=" font-semibold sm:pl-6 lg:pl-8">
             Created
           </th>
           <th
@@ -70,49 +70,49 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-white/5">
-        <tr v-for="item in usageData" :key="item.id">
+        <tr v-for="item in usageData" :key="item.id" class="hover:bg-yellow-200 dark:hover:bg-blue-900 border-b dark:border-white/10 border-gray-100">
           <td
-            class="px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="px-6 py-3 text-sm dark:text-gray-400 text-black text-black md:table-cell"
           >
             {{ formatDate(item.createdAt.toDate()) }}
           </td>
           <td
-            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="hidden px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             {{ item.model }}
           </td>
           <td
-            class="hidden px-6 py-3 text-xs leading-6 text-gray-400 md:table-cell"
+            class="hidden px-6 py-3 text-xs dark:text-gray-400 text-black md:table-cell"
           >
             {{ item.apikey }}
           </td>
           <td
-            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="hidden px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             {{ item.promptTokens }}
           </td>
           <td
-            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="hidden px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             {{ item.completionTokens }}
           </td>
           <td
-            class="px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             {{ item.totalTokens }}
           </td>
           <td
-            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="hidden px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             ${{ item.promptCost.toFixed(4) }}
           </td>
           <td
-            class="hidden px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="hidden px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             ${{ item.outputCost.toFixed(4) }}
           </td>
           <td
-            class="px-6 py-3 text-sm leading-6 text-gray-400 md:table-cell"
+            class="px-6 py-3 text-sm dark:text-gray-400 text-black md:table-cell"
           >
             ${{ item.totalCost.toFixed(3) }}
           </td>
