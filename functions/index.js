@@ -16,7 +16,7 @@ const db = admin.firestore();
  * @param {number} rate - The rate per 1000 tokens.
  * @return {string} The calculated cost, rounded to four decimal places.
  */
-const calculateCost = (tokens, rate) => parseFloat(tokens  * rate / 1000);
+const calculateCost = (tokens, rate) => parseFloat(tokens * rate / 1000);
 
 /**
  * Replaces the middle half of a string with periods.
@@ -31,19 +31,104 @@ function replaceMiddleWithPeriods(str) {
 }
 
 /**
+ * Fetch available models from the OpenAI API and store them in Firestore with default pricing.
+ */
+async function loadModelsToFirestore() {
+  let response;
+  try {
+
+    const targetUrl = `https://api.openai.com/v1/models`;
+    const auth = process.env.OPENAI_API_KEY;
+
+    // logger.info(`Proxying request to ${targetUrl}`)
+    const requestObject = {
+      url: targetUrl,
+      method: "GET",
+      headers: { 'Authorization': `Bearer ${auth}` },
+      // data: req.body
+    }
+    logger.info(requestObject)
+
+
+    logger.debug(requestObject)
+    response = await axios(requestObject);
+    
+  } catch (error) {
+    // Handle Axios error here
+    if (error.response) {
+      // Server responded with a non-2xx status code
+      logger.error('Server Error:', error.response.data);
+    } else if (error.request) {
+      // No response received, likely a network issue
+      logger.error('Network Error:', error.request);
+    } else {
+      // Something else happened while setting up the request
+      logger.error('Request Error:', error.message);
+    }
+    throw error;
+  }
+  console.log(response)
+  try {
+    const models = response.data.data;
+
+    // Set default pricing values
+    const defaultPricePer1000TokensInput = 0.03;
+    const defaultPricePer1000TokensOutput = 0.06;
+
+    // Store models in Firestore
+    for (const model of models) {
+      const modelName = model.id;
+
+      // Check if the model already exists in Firestore
+      const pricingDoc = await db.collection('pricing').where('model_name', '==', modelName).get();
+
+      if (pricingDoc.empty) {
+        // Model does not exist, create a new document
+        await db.collection('pricing').doc(modelName).set({
+          model_name: modelName,
+          pricePer1000TokensInput: defaultPricePer1000TokensInput,
+          pricePer1000TokensOutput: defaultPricePer1000TokensOutput,
+          createdAt: Timestamp.now(),
+          modifiedAt: Timestamp.now(), // Initially, createdAt and modifiedAt are the same
+        });
+
+        logger.info(`Model ${modelName} added with default pricing.`);
+      } else {
+        logger.info(`Model ${modelName} already exists in Firestore.`);
+      }
+    }
+
+    logger.info('All models loaded to Firestore.');
+  } catch (error) {
+    logger.error('Error loading models to Firestore:', error);
+    throw error;
+  }
+}
+
+/**
  * Determine the pricing for input and output tokens based on the model name.
  * @param {string} model - The name of the model being used.
- * @returns {number[]} - An array with two elements: pricePer1000TokensInput and pricePer1000TokensOutput.
+ * @returns {Promise<number[]>} - An array with two elements: pricePer1000TokensInput and pricePer1000TokensOutput.
  */
-function determinePricing(model) {
-  // https://openai.com/pricing
-  if (model.startsWith("gpt-3")) {
-    return [0.0015, 0.002];
+async function determinePricing(model) {
+  try {
+    const pricingDoc = await db.collection('pricing').where('model_name', '==', model).get();
+
+    if (!pricingDoc.empty) {
+      const pricingData = pricingDoc.docs[0].data();
+      const { pricePer1000TokensInput, pricePer1000TokensOutput } = pricingData;
+      logger.info(`Pricing for ${model}: $${pricePer1000TokensInput} per 1000 input tokens, $${pricePer1000TokensOutput} per 1000 output tokens`);
+      return [pricePer1000TokensInput, pricePer1000TokensOutput];
+    } else {
+      // Model not found in Firestore, return default pricing
+      logger.info(`Pricing for ${model} not found, using default pricing`);
+      return [0.03, 0.06];
+    }
+  } catch (error) {
+    logger.info(`Error fetching pricing data for ${model}, using default pricing`);
+    // console.error('Error fetching pricing data:', error);
+    throw error;
   }
-  if (model.startsWith("gpt-4")) {
-    return [0.03, 0.06];
-  }
-  return [0.03, 0.06]; // default
 }
 
 /**
@@ -64,7 +149,7 @@ async function trackCosts(response, model, cacheDoc) {
   const { usage } = response;
 
   // Use the function to get pricing.
-  const [pricePer1000TokensInput, pricePer1000TokensOutput] = determinePricing(model);
+  const [pricePer1000TokensInput, pricePer1000TokensOutput] = await determinePricing(model);
 
   const promptCost = calculateCost(usage.prompt_tokens, pricePer1000TokensInput);
   const outputCost = calculateCost(usage.completion_tokens, pricePer1000TokensOutput);
@@ -82,7 +167,7 @@ async function trackCosts(response, model, cacheDoc) {
 
   const usageObject = {
     createdAt: Timestamp.now(),
-    model, 
+    model,
     promptTokens: usage.prompt_tokens,
     completionTokens: usage.completion_tokens,
     totalTokens: usage.total_tokens,
@@ -178,7 +263,7 @@ exports.openAIProxy = onRequest(async (req, res) => {
       apikey: replaceMiddleWithPeriods(auth),
       authHash,
       tokensUsed: tokensUsed,
-      timestamp: currentTime, 
+      timestamp: currentTime,
       lastModified: Timestamp.now(),
     });
 
@@ -209,8 +294,8 @@ exports.openAIProxy = onRequest(async (req, res) => {
 exports.getOpenAIUsage = onRequest(async (req, res) => {
   try {
     const snapshot = await db.collection('openaiUsage').orderBy('createdAt', 'desc').get();
-    
-    const data = snapshot.docs.map(doc =>{
+
+    const data = snapshot.docs.map(doc => {
       const docData = doc.data();
       const createdDate = docData.createdAt.toDate().toISOString();
       const cacheId = docData.cacheDoc.id;
@@ -221,8 +306,8 @@ exports.getOpenAIUsage = onRequest(async (req, res) => {
       return {
         ...docData,
         createdAt: createdDate,
-        cacheId, 
-        
+        cacheId,
+
       };
     });
     res.status(200).json(data);
@@ -231,3 +316,16 @@ exports.getOpenAIUsage = onRequest(async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
+
+exports.loadOpenAIModels = onRequest(async (req, res) => {
+
+  try {
+    await loadModelsToFirestore();
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+
+})
