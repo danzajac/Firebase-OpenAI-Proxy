@@ -1,5 +1,5 @@
 import { createStore } from 'vuex';
-import { getFirestore, collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot, query, orderBy, where, Timestamp } from 'firebase/firestore';
 
 const db = getFirestore();
 
@@ -7,7 +7,9 @@ export default createStore({
   state: {
     usageData: [],
     loading: false,
-    error: null
+    error: null,
+    startDate: null,
+    endDate: null
   },
   mutations: {
     setUsageData(state, payload) {
@@ -18,24 +20,30 @@ export default createStore({
     },
     setError(state, payload) {
       state.error = payload;
+    },
+    setDateRange(state, { startDate, endDate }) {
+      state.startDate = startDate;
+      state.endDate = endDate;
     }
   },
   actions: {
-    fetchUsageData({ commit }, timeRangeInHours) {
+    fetchUsageData({ commit }, { startDate, endDate }) {
       commit('setLoading', true);
 
-      let q;
-      if (typeof timeRangeInHours === 'number') {
-        const currentTime = Timestamp.now();
-        const startTime = Timestamp.fromMillis(currentTime.toMillis() - (timeRangeInHours * 3600 * 1000));
+      // Convert dates to Timestamps if they are not already
+      const startTimestamp = startDate instanceof Timestamp ? startDate : Timestamp.fromDate(new Date(startDate));
+      const endTimestamp = endDate instanceof Timestamp ? endDate : Timestamp.fromDate(new Date(endDate));
+      
+      let q = query(
+        collection(db, "openaiUsage"),
+        orderBy("createdAt", "desc")
+      );
+
+      if (startDate && endDate) {
         q = query(
           collection(db, "openaiUsage"), 
-          where("createdAt", ">=", startTime),
-          orderBy("createdAt", "desc")
-        );
-      } else {
-        q = query(
-          collection(db, "openaiUsage"),
+          where("createdAt", ">=", startTimestamp),
+          where("createdAt", "<=", endTimestamp),
           orderBy("createdAt", "desc")
         );
       }
@@ -47,10 +55,7 @@ export default createStore({
             allData.push(doc.data());
           });
           commit('setUsageData', allData);
-          if (this.state.loading === true) {
-            commit('setLoading', false);
-          }
-          
+          commit('setLoading', false);
         },
         (error) => {
           commit('setError', error.message);

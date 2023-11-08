@@ -1,8 +1,9 @@
 <template>
   <!-- Stats -->
-
+  <div>
   <div
     class="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4"
+    v-if="!loading"
   >
     <div
       v-for="stat in stats"
@@ -22,14 +23,21 @@
       </p>
     </div>
   </div>
+  <div v-else class="">
+    <h1>Loading Stats</h1>
+    <Loader />
+  </div>
+</div>
 </template>
 
 <script setup>
 // Footer logic (if any)
 import { useStore } from "vuex";
 import { ref, computed, onMounted } from "vue";
+import Loader from "@/components/Loader.vue";
 const store = useStore();
 const usageData = computed(() => store.state.usageData);
+const loading = computed(() => store.state.loading);
 
 const totalCostSum = computed(() => {
   return usageData.value
